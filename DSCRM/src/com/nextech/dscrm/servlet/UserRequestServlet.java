@@ -1,33 +1,24 @@
 package com.nextech.dscrm.servlet;
 
-//import java.beans.Statement;
 import java.sql.*;
 import java.io.IOException;
-//import java.io.PrintWriter;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
+import java.util.List;
 import javax.servlet.ServletException;
-//import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-//import jdk.nashorn.internal.ir.RuntimeNode.Request;
-
-
-import com.sun.corba.se.pept.transport.Connection;
-
+import com.nextech.dscrm.pojo.UserRequest;
 
 @WebServlet("/UserRequestServlet")
 public class UserRequestServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	//private ServletResponse response;
-	private Object list;
+//	private Object list;
        
   
     public UserRequestServlet() {
@@ -36,38 +27,45 @@ public class UserRequestServlet extends HttpServlet {
     }
 
 	
+	@SuppressWarnings("unchecked")
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		((UserRequestServlet) request).getAllUserRequests();
-		request.setAttribute("list",list);
-		response.setContentType("text/html");
-	      ServletContext context=getServletContext();
-	      RequestDispatcher dispatcher=context.getRequestDispatcher("viewAllUserRequest.JSP");
-	      dispatcher.forward(request, response);
+		try{
+		List<UserRequest> allUsers = getAllUserRequests();
+		System.out.println("allUsers length : "  +allUsers.size());
+		//((UserRequestServlet) request).getAllUserRequests();
+		 request.setAttribute("allUsers", allUsers);
+	      request.getRequestDispatcher("/viewAllUserRequest.jsp").forward(request, response);
+		}catch(Exception ex){
+			ex.printStackTrace();
+		}
+		
 	}
 	
-	public void getAllUserRequests()
+	@SuppressWarnings("rawtypes")
+	public List getAllUserRequests()
 	{
-		ArrayList<userrequest> list = new ArrayList<userrequest>();
+		ArrayList<UserRequest> allUsers = new ArrayList<UserRequest>();
 		try{
+			System.out.println("Inside getAllUserRequests...");
 		    Class.forName("com.mysql.jdbc.Driver");
-		    Connection conn = (Connection) DriverManager.getConnection("jdbc:mysql://localhost/TEST","root","system");
+		    Connection conn = (Connection) DriverManager.getConnection("jdbc:mysql://localhost:3306/DSCRM","root","system");
 
-		    PreparedStatement pps = ((java.sql.Connection) conn).prepareStatement("SELECT * FROM dscrm.userrequest");
+		    PreparedStatement pps = conn.prepareStatement("SELECT * FROM dscrm.userrequest");
 		    ResultSet rs = pps.executeQuery();
 		    while(rs.next()){
-		    //do something
-		   /* System.out.println(rs.getString("name"));
-		    System.out.println(rs.getString("mobile"));
-		    System.out.println(rs.getString("email"));
-		    System.out.println(rs.getString("requirementDescription"));
-		    */
-		    	userrequest user=new userrequest();
-		    	user.name=rs.getString("name");
-		    	user.mobile=rs.getString("mobile");
-		    	user.email=rs.getString("email");
-		    	user.requirementDescription=rs.getString("requirementDescription");
-		    	list.add(user);
+		  
+		    	System.out.println("Inside while getAllUserRequests...");
+		    	UserRequest user=new UserRequest();
+		    	user.setId(rs.getInt("id"));
+		    	user.setName(rs.getString("name"));
+		    	user.setMobile(rs.getString("mobile"));
+		    	user.setEmail(rs.getString("email"));
+		    	user.setRequirementDescription(rs.getString("requirementDescription"));
+		    	user.setRequestUpdateTime(rs.getTimestamp("requestUpdateTime"));
+		    	user.setRequesTtime(rs.getTimestamp("requesTtime"));
+		    	user.setRequestStatus(rs.getInt("requestStatus"));
+		        allUsers.add(user);
 		   
 		    }
 		    
@@ -75,7 +73,9 @@ public class UserRequestServlet extends HttpServlet {
 		conn.close();
 		    }catch(Exception ex){
 		      // do something
-		    }  
+		    	ex.printStackTrace();
+		    }
+		return allUsers;  
 	}
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
